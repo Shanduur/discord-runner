@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/lus/dgc"
+	"github.com/shanduur/discord-runner/notify"
 	"github.com/shanduur/discord-runner/runner"
 )
 
@@ -47,20 +48,25 @@ func handler(ctx *dgc.Ctx) {
 	ctx.RespondText(runnerCreated(r))
 
 	if err := r.Download(); err != nil {
-		ctx.RespondText(respondError(r, err))
+		notify.Error(ctx, respondError(r, err))
+		return
 	} else {
 		ctx.RespondText(downloaded(r))
 	}
 
 	if err := r.ReadCfg(); err != nil {
-		ctx.RespondText(respondError(r, err))
+		notify.Error(ctx, respondError(r, err))
+		return
 	} else {
 		ctx.RespondText(configOk(r))
 	}
 
 	if err := r.Run(); err != nil {
-		ctx.RespondText(respondError(r, err))
+		notify.Error(ctx, respondError(r, err))
+		return
 	} else {
 		ctx.RespondText(runFinished(r))
 	}
+
+	notify.Done(ctx)
 }

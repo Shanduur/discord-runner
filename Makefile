@@ -1,8 +1,11 @@
+TARGET=discord-runner
+
 .PHONY: build
 build:
-	go build -o ./build/discord-runner ./main.go
+	go build -o ./build/$(TARGET) ./main.go
 
 .PHONY: test
+test:
 	go test ./...
 
 .PHONY: docker
@@ -11,6 +14,13 @@ docker:
 		--platform linux/amd64,linux/arm64 \
 		--output=type=registry \
 		--no-cache \
-		--tag shanduur/discord-runner:$(cat ./version.txt) \
-		--tag shanduur/discord-runner:dev \
+		--tag shanduur/$(TARGET):$(cat ./version.txt) \
+		--tag shanduur/$(TARGET):dev \
 		.
+
+include .dev.env
+export
+
+.PHONY: run
+run: build
+	./build/$(TARGET)

@@ -2,7 +2,7 @@ platform = "python:3.8-alpine"
 
 [[env]]
 key = "WANDB_API_KEY"
-value = "{{.SECRET.wandb-api-key}}"
+value = "{{.SECRET.WANDB_API_KEY}}"
 
 [[actions.prepare]]
 command = "pip"

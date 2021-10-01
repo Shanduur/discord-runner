@@ -13,6 +13,8 @@ import (
 var s *discordgo.Session
 
 func main() {
+	logrus.SetLevel(logrus.DebugLevel)
+
 	defer func() {
 		sc := make(chan os.Signal, 1)
 		signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -21,6 +23,7 @@ func main() {
 	}()
 
 	b := bot.New(os.Getenv("DISCORD_TOKEN"))
+	logrus.Debug(b.Token)
 
 	if err := b.Run(); err != nil {
 		logrus.Fatalf("unable to run bot: %s", err.Error())
