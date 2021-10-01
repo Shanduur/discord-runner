@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Go: Launch", // requires golang.go extension
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "env": {},
+            "envFile": "${workspaceFolder}/.dev.env",
+            "args": []
+        },        
+    ]
+}

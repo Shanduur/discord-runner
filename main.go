@@ -10,8 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const TOKEN = "TOKEN_HERE"
-
 var s *discordgo.Session
 
 func main() {
@@ -22,7 +20,7 @@ func main() {
 		logrus.Println("Bot is shutting down!")
 	}()
 
-	b := bot.New(TOKEN)
+	b := bot.New(os.Getenv("DISCORD_TOKEN"))
 
 	if err := b.Run(); err != nil {
 		logrus.Fatalf("unable to run bot: %s", err.Error())
