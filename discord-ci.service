@@ -1,0 +1,10 @@
+[Unit]
+Description=
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+WorkingDirectory=/usr/discord-runner -c /env/discord-runner/config.toml
+ExecStart=bash -c "/usr/mvs38/mvs"
+
+[Install]
+WantedBy=multi-user.target
