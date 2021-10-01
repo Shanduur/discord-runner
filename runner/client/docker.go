@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
 )
@@ -58,10 +59,11 @@ func (c Client) PrepareContainer(image string) (id string, err error) {
 
 	resp, err := c.dockerClient.ContainerCreate(ctx, &container.Config{
 		Image:        image,
-		Tty:          false,
+		Tty:          true,
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
+		Cmd:          strslice.StrSlice{"/bin/sh"},
 	}, nil, nil, nil, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create mock container: %v", err)
