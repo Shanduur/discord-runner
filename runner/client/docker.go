@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
 )
 
 // Client structure contains all info about client
@@ -34,6 +35,12 @@ func New(timeout time.Duration) (c *Client, err error) {
 	return
 }
 
+func (c *Client) Close() {
+	if err := c.dockerClient.Close(); err != nil {
+		logrus.Errorf("failed to close docker client: %s", err.Error())
+	}
+}
+
 func (c Client) GetRawClient() *client.Client {
 	return c.dockerClient
 }
@@ -50,9 +57,11 @@ func (c Client) PrepareContainer(image string) (id string, err error) {
 	io.Copy(io.Discard, reader)
 
 	resp, err := c.dockerClient.ContainerCreate(ctx, &container.Config{
-		Image: image,
-		Tty:   false,
-		Cmd:   []string{"sleep", fmt.Sprint(60 * 60 * 24)},
+		Image:        image,
+		Tty:          false,
+		AttachStdin:  true,
+		AttachStdout: true,
+		AttachStderr: true,
 	}, nil, nil, nil, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create mock container: %v", err)

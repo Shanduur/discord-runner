@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/lus/dgc"
+	"github.com/shanduur/discord-runner/runner"
 )
 
 var Cmd = &dgc.Command{
@@ -41,5 +42,25 @@ func handler(ctx *dgc.Ctx) {
 		return
 	}
 
-	ctx.RespondText("Got: " + ctx.Arguments.Get(0).Raw())
+	r := runner.New(ctx.Arguments.Get(0).Raw())
+	defer r.Close()
+	ctx.RespondText(runnerCreated(r))
+
+	if err := r.Download(); err != nil {
+		ctx.RespondText(respondError(r, err))
+	} else {
+		ctx.RespondText(downloaded(r))
+	}
+
+	if err := r.ReadCfg(); err != nil {
+		ctx.RespondText(respondError(r, err))
+	} else {
+		ctx.RespondText(configOk(r))
+	}
+
+	if err := r.Run(); err != nil {
+		ctx.RespondText(respondError(r, err))
+	} else {
+		ctx.RespondText(runFinished(r))
+	}
 }
