@@ -1,0 +1,21 @@
+platform = "python:3.8-alpine"
+
+[[env]]
+key = "WANDB_API_KEY"
+value = "{{.SECRET.wandb-api-key}}"
+
+[[actions.prepare]]
+command = "pip"
+args = [ "install", "pipenv" ]
+
+[[actions.prepare]]
+command = "pipenv"
+args = [ "install", "--ignore-pipfile" ]
+
+[actions.run]
+command = "python3"
+args = [ "./script.py", "--debug", "10" ]
+
+[actions.test]
+command = "pytest"
+args = [ "./script-test" ]

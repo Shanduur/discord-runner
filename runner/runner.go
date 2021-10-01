@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/google/uuid"
-	"gopkg.in/yaml.v2"
+	"github.com/shanduur/discord-runner/runner/client"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
-const filename = ".discord-runner.yaml"
+const filename = ".discord-runner"
 
+// constants descirbing status of runner
 const (
 	PENDING = iota
 	RUNNING
@@ -19,22 +23,36 @@ const (
 	ERROR
 )
 
+// Runner is a structure holding configuration of runner
 type Runner struct {
-	Status int
-	TmpDir string
+	Status        int
+	TmpDir        string
+	Viper         *viper.Viper
+	ContainerID   string
+	Client        *client.Client
+	RepositoryURL string
 }
 
-func New() (r *Runner) {
-	r = &Runner{}
-	r.TmpDir = path.Join("/tmp", uuid.NewString())
-	r.Status = PENDING
+// New creates new runner
+func New(repositoryURL string) (r *Runner) {
+	r = &Runner{
+		TmpDir:        path.Join("/tmp", uuid.NewString()),
+		Status:        PENDING,
+		Viper:         viper.New(),
+		RepositoryURL: repositoryURL,
+	}
+
+	r.Viper.SetConfigName(filename)
+	r.Viper.AddConfigPath(r.TmpDir)
 
 	return
 }
 
-func (r Runner) Download(url string) error {
+// Download fetches git repo to the temporary location
+// WARNING: curently only supports HTTPS git repos
+func (r Runner) Download() error {
 	_, err := git.PlainClone(r.TmpDir, false, &git.CloneOptions{
-		URL:   url,
+		URL:   r.RepositoryURL,
 		Depth: 1,
 	})
 	if err != nil {
@@ -44,24 +62,39 @@ func (r Runner) Download(url string) error {
 	return nil
 }
 
-func (r *Runner) Run() {
-
-}
-
-func (r Runner) ReadCfg() error {
-	f, err := os.ReadFile(path.Join(r.TmpDir, filename))
+// Run starts all actions connected with Runner
+func (r *Runner) Run() (err error) {
+	r.Client, err = client.New(30 * time.Second)
 	if err != nil {
-		return fmt.Errorf("unable to open config file: %s", err.Error())
+		return fmt.Errorf("unable to create client")
 	}
 
-	cfg := make(map[string]interface{})
-	if err := yaml.Unmarshal(f, cfg); err != nil {
-		return fmt.Errorf("unable to unmarshall config: %s", err.Error())
+	r.ContainerID, err = r.Client.PrepareContainer(r.Viper.GetString("platform"))
+	if err != nil {
+		return fmt.Errorf("unable to prepare container: %s", err.Error())
 	}
 
-	return fmt.Errorf("%+v", cfg)
+	return
 }
 
-func (r Runner) cleanup() {
+// ReadCfg loads runner action configuration from repository
+func (r *Runner) ReadCfg() error {
+	if err := r.Viper.ReadInConfig(); err != nil {
+		return fmt.Errorf("unable to read config: %s", err.Error())
+	}
 
+	return nil
+}
+
+// Close shuts down the runner and frees all connected resources
+func (r *Runner) Close() {
+	if err := os.RemoveAll(r.TmpDir); err != nil {
+		logrus.Errorf("failed to remove dir: %s", err.Error())
+	}
+
+	if r.Client != nil {
+		if status, err := r.Client.KillContainer(r.ContainerID); err != nil {
+			logrus.Errorf("failed to kill container, got status '%s': %s", status, err.Error())
+		}
+	}
 }
